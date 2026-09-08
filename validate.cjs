@@ -1,0 +1,44 @@
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const built = process.argv.includes('--dist');
+const root = built ? 'dist' : '.';
+const sourceHtml = fs.readFileSync(path.join(root,'index.html'), 'utf8');
+const html = built ? sourceHtml : sourceHtml.replace(/<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/, require('./seo.cjs').renderSeo(require('./seo.config.json')));
+const css = fs.readFileSync(path.join(root,'styles.css'), 'utf8');
+const exists = file => fs.existsSync(path.join(root,file));
+const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+assert.equal(new Set(ids).size, ids.length, 'Duplicate HTML ids');
+for (const match of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.includes(match[1]), `Missing anchor: ${match[1]}`);
+for (const match of html.matchAll(/(?:src|href)="(assets\/[^" ]+|styles.css|script.js)"/g)) assert.ok(exists(match[1]), `Missing asset: ${match[1]}`);
+for (const match of html.matchAll(/(?:srcset|imagesrcset)="([^"]+)"/g)) for(const candidate of match[1].split(',')) assert.ok(exists(candidate.trim().split(/\s+/)[0]),'Missing responsive image');
+for (const match of html.matchAll(/data-icon="([^"]+)"/g)) assert.ok(exists(`assets/icons/${match[1]}.svg`));
+for (const match of css.matchAll(/url\(['"]?(assets\/[^)'" ]+)/g)) assert.ok(exists(match[1]), `Missing CSS asset: ${match[1]}`);
+assert.ok(!/<script[^>]+src="https?:/.test(html), 'External script dependency');
+for(const tag of html.matchAll(/<link\b[^>]*>/g)) if(/rel="(?:stylesheet|preload)"/.test(tag[0])) assert.ok(!/href="https?:/.test(tag[0]),'External render dependency');
+assert.ok(html.includes('lang="es-AR"'));
+assert.ok(html.includes('Modo de prueba'));
+assert.equal((html.match(/<h1\b/g)||[]).length,1,'Exactly one H1');
+for (const image of html.matchAll(/<img\b[^>]*>/g)) {
+  assert.ok(/\balt="[^"]*"/.test(image[0]), 'Image without alt');
+  assert.ok(/\bwidth="\d+"/.test(image[0]) && /\bheight="\d+"/.test(image[0]),'Image without dimensions');
+}
+const config = require('./seo.config.json');
+const {validateConfig,renderRobots,renderSitemap} = require('./seo.cjs');
+validateConfig(config);
+assert.equal((html.match(/rel="canonical"/g)||[]).length,1);
+assert.ok(html.includes(`rel="canonical" href="${config.siteUrl}"`));
+const data=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+assert.equal(data['@graph'].filter(item=>item['@type']==='Organization').length,1);
+assert.equal(data['@graph'].filter(item=>item['@type']==='Service').length,3);
+const hero=html.match(/<img class="hero-image"[^>]+>/)[0];
+const preload=html.match(/<link rel="preload" as="image"[^>]+>/)[0];
+assert.equal(hero.match(/srcset="([^"]+)"/)[1],preload.match(/imagesrcset="([^"]+)"/)[1],'Hero preload must match responsive candidates');
+assert.equal(hero.match(/sizes="([^"]+)"/)[1],preload.match(/imagesizes="([^"]+)"/)[1]);
+assert.ok(html.includes(`content="${config.indexable?'index, follow, max-image-preview:large':'noindex, follow'}"`));
+const publicConfig={...config,indexable:true,domainConfirmed:true,businessDataConfirmed:true};
+assert.ok(renderRobots(publicConfig).includes('Sitemap: '+config.siteUrl+'sitemap.xml'));
+assert.equal((renderSitemap(publicConfig).match(/<loc>/g)||[]).length,1,'Single-page site has one canonical sitemap URL, not fragment pages');
+assert.throws(()=>validateConfig({...config,indexable:true,domainConfirmed:false}));
+if(built){assert.equal(fs.existsSync(path.join(root,'sitemap.xml')),config.indexable);assert.equal(fs.readFileSync(path.join(root,'robots.txt'),'utf8'),renderRobots(config));}
+console.log(`Verified ${built?'built':'source'} HTML, responsive resources, accessibility basics, schema, canonical, indexation and launch sitemap behavior.`);

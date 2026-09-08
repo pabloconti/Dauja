@@ -1,0 +1,16 @@
+{
+  "name": "dauja-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sitio estático de Dauja S.R.L. en HTML, CSS y JavaScript puro",
+  "scripts": {
+    "dev": "node server.cjs",
+    "build": "node build.cjs",
+    "check": "node --check script.js && node validate.cjs",
+    "preview": "node server.cjs --dist",
+    "check:build": "node validate.cjs --dist && node --check dist/script.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
