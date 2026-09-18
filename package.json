@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "node server.cjs",
     "build": "node build.cjs",
-    "check": "node --check script.js && node validate.cjs",
+    "check": "node --check script.js && node --test asset-versions.test.cjs && node validate.cjs",
     "preview": "node server.cjs --dist",
     "check:build": "node validate.cjs --dist && node --check dist/script.js",
-    "export:hosting": "npm run check && npm run build && npm run check:build && node export-hosting.cjs"
+    "export:hosting": "npm run build && npm run check && npm run check:build && node export-hosting.cjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"

@@ -8,6 +8,8 @@ El formulario prepara una consulta para abrirla en WhatsApp o email, donde la pe
 
 Ver [detalle de correcciones](CORRECCIONES-2026-09-18.md). Las notas que siguen documentan el prototipo original y sus primeras revisiones; donde difieran, prevalece el estado actual anterior.
 
+GitHub Pages publica la raíz de `master`. Después de cambiar CSS o JavaScript, ejecutar `npm run build`: actualiza automáticamente sus versiones en el `index.html` de la raíz y en el compilado. Incluir ese HTML actualizado en el commit. `npm run check` detecta referencias desactualizadas para evitar mezclar contenido nuevo con estilos o scripts anteriores almacenados en caché.
+
 ## Historial del prototipo
 
 HTML, CSS y JavaScript puro, sin frameworks, dependencias ni servicios externos. Se puede abrir `index.html` directamente. Para vista previa local: `npm run dev`, en http://127.0.0.1:4173. Requiere Node únicamente para los comandos de desarrollo; el sitio publicado no lo necesita.

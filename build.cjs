@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const esbuild = require('esbuild');
-const {createHash} = require('node:crypto');
+const {versionAssetReferences,syncSourceAssetVersions} = require('./asset-versions.cjs');
 const {renderSeo,renderRobots,renderSitemap,validateConfig} = require('./seo.cjs');
 const config = require('./seo.config.json');
 validateConfig(config);
@@ -14,16 +14,16 @@ if (fs.existsSync(out)) {
   fs.rmSync(out, { recursive: true, force: true });
 }
 fs.mkdirSync(out, { recursive: true });
-let html = fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/,renderSeo(config));
+// Pages serves the repository root, so its entry needs revisions as well.
+let html = syncSourceAssetVersions(root).replace(/<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/,renderSeo(config));
 fs.writeFileSync(path.join(out,'index.html'),html);
 for(const [file,loader] of [['styles.css','css'],['script.js','js']]) {
   const source = fs.readFileSync(path.join(root,file),'utf8');
   const result = esbuild.transformSync(source,{loader,minify:true,target:loader==='css'?['chrome100','firefox100','safari15.4']:'es2020',legalComments:'none',charset:'utf8'});
   fs.writeFileSync(path.join(out,file),result.code);
-  const revision=createHash('sha256').update(result.code).digest('hex').slice(0,12);
-  html=html.replace(`"${file}"`,`"${file}?v=${revision}"`);
   console.log(`${file}: ${Buffer.byteLength(source)} -> ${Buffer.byteLength(result.code)} bytes`);
 }
+html=versionAssetReferences(html,file=>fs.readFileSync(path.join(out,file),'utf8'));
 fs.writeFileSync(path.join(out,'index.html'),html);
 // Publish only referenced assets. Original photos with legible plates and old
 // client logos stay in the source archive, outside the hosting export.

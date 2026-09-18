@@ -7,6 +7,8 @@ const sourceHtml = fs.readFileSync(path.join(root,'index.html'), 'utf8');
 const html = built ? sourceHtml : sourceHtml.replace(/<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/, require('./seo.cjs').renderSeo(require('./seo.config.json')));
 const css = fs.readFileSync(path.join(root,'styles.css'), 'utf8');
 const exists = file => fs.existsSync(path.join(root,file.split('?')[0]));
+const {versionAssetReferences}=require('./asset-versions.cjs');
+assert.equal(sourceHtml,versionAssetReferences(sourceHtml,file=>fs.readFileSync(path.join(root,file),'utf8')),'CSS/JS revisions are missing or stale. Run npm run build before publishing.');
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 assert.equal(new Set(ids).size, ids.length, 'Duplicate HTML ids');
 for (const match of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.includes(match[1]), `Missing anchor: ${match[1]}`);
