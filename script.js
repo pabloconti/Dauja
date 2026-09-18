@@ -1,10 +1,6 @@
 'use strict';
 
-// Local SVG icons are rendered through CSS masks: no library or external requests.
-document.querySelectorAll('[data-icon]').forEach(icon => {
-  icon.style.setProperty('--icon', `url("assets/icons/${icon.dataset.icon}.svg")`);
-  icon.setAttribute('aria-hidden', 'true');
-});
+// Icons render directly from CSS, including before JavaScript starts.
 
 const menuButton = document.querySelector('.menu-toggle');
 const navigation = document.querySelector('#navigation');
@@ -193,10 +189,14 @@ form.addEventListener('submit', event => {
   event.preventDefault();
   const fields = new FormData(form);
   document.querySelector('#message-preview').textContent = `Consulta para Dauja S.R.L.\n\nNombre / empresa: ${fields.get('name').trim()}\nEmail: ${fields.get('email').trim()}\n\n${fields.get('message').trim()}`;
+  const message = document.querySelector('#message-preview').textContent.replace('Dauja S.R.L.', 'DAUJA SRL');
+  document.querySelector('#message-preview').textContent = message;
+  document.querySelector('#send-whatsapp').href = 'https://wa.me/5491134843333?text=' + encodeURIComponent(message);
+  document.querySelector('#send-email').href = 'mailto:administracion@dauja.com.ar?subject=' + encodeURIComponent('Consulta de transporte · DAUJA SRL') + '&body=' + encodeURIComponent(message);
   form.hidden = true;
   result.hidden = false;
   document.querySelector('#copy-status').textContent = '';
-  document.querySelector('#copy-message').focus();
+  document.querySelector('#send-whatsapp').focus();
 });
 document.querySelector('#copy-message').addEventListener('click', async () => {
   const status = document.querySelector('#copy-status');
@@ -228,7 +228,6 @@ if (processSection && routeToggle) {
     const label = paused ? 'Reanudar animación del recorrido' : 'Pausar animación del recorrido';
     routeToggle.setAttribute('aria-label', label);
     routeToggle.title = label;
-    routeToggle.firstElementChild.textContent = paused ? '▶' : 'Ⅱ';
   });
 }
 

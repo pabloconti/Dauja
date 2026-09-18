@@ -1,4 +1,6 @@
 dist/
 *.tar.gz
 node_modules/
+.work/
 public_html.zip
+.hosting-backups/

@@ -1,5 +1,15 @@
 # Dauja — sitio web estático
 
+## Estado actual — 18/09/2026
+
+Logo oficial, 24 marcas provistas por la empresa, patentes cubiertas, sección «Servicios y flota» unificada y contactos reales de DAUJA SRL. Dirección: Perú 359, CABA. WhatsApp: +54 9 11 3484-3333. Email: administracion@dauja.com.ar. Instagram: @daujasrl.
+
+El formulario prepara una consulta para abrirla en WhatsApp o email, donde la persona confirma su envío. Para generar la carpeta del hosting: `npm run export:hosting`. La exportación excluye fotografías originales con patentes legibles y recursos reemplazados. El dominio final todavía está pendiente y se conserva `noindex`.
+
+Ver [detalle de correcciones](CORRECCIONES-2026-09-18.md). Las notas que siguen documentan el prototipo original y sus primeras revisiones; donde difieran, prevalece el estado actual anterior.
+
+## Historial del prototipo
+
 HTML, CSS y JavaScript puro, sin frameworks, dependencias ni servicios externos. Se puede abrir `index.html` directamente. Para vista previa local: `npm run dev`, en http://127.0.0.1:4173. Requiere Node únicamente para los comandos de desarrollo; el sitio publicado no lo necesita.
 
 ## Archivos

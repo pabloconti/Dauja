@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const esbuild = require('esbuild');
+const {createHash} = require('node:crypto');
 const {renderSeo,renderRobots,renderSitemap,validateConfig} = require('./seo.cjs');
 const config = require('./seo.config.json');
 validateConfig(config);
@@ -19,9 +20,23 @@ for(const [file,loader] of [['styles.css','css'],['script.js','js']]) {
   const source = fs.readFileSync(path.join(root,file),'utf8');
   const result = esbuild.transformSync(source,{loader,minify:true,target:loader==='css'?['chrome100','firefox100','safari15.4']:'es2020',legalComments:'none',charset:'utf8'});
   fs.writeFileSync(path.join(out,file),result.code);
+  const revision=createHash('sha256').update(result.code).digest('hex').slice(0,12);
+  html=html.replace(`"${file}"`,`"${file}?v=${revision}"`);
   console.log(`${file}: ${Buffer.byteLength(source)} -> ${Buffer.byteLength(result.code)} bytes`);
 }
-fs.cpSync(path.join(root,'assets'),path.join(out,'assets'),{recursive:true});
+fs.writeFileSync(path.join(out,'index.html'),html);
+// Publish only referenced assets. Original photos with legible plates and old
+// client logos stay in the source archive, outside the hosting export.
+const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+const assets=new Set([...`${html}\n${css}`.matchAll(/assets\/[A-Za-z0-9_./-]+\.(?:webp|png|jpg|jpeg|svg|woff2|ttf)/g)].map(m=>m[0]));
+for(const icon of html.matchAll(/data-icon="([\w-]+)"/g)) assets.add(`assets/icons/${icon[1]}.svg`);
+assets.add('assets/fonts/OFL-BarlowCondensed.txt');
+for(const asset of assets){
+  if(asset.includes('..')) throw new Error('Unsafe asset reference');
+  const target=path.join(out,asset);
+  fs.mkdirSync(path.dirname(target),{recursive:true});
+  fs.copyFileSync(path.join(root,asset),target);
+}
 fs.copyFileSync(path.join(root,'404.html'),path.join(out,'404.html'));
 fs.copyFileSync(path.join(root,'_headers'),path.join(out,'_headers'));
 fs.writeFileSync(path.join(out,'robots.txt'),renderRobots(config));
